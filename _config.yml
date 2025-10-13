@@ -23,7 +23,7 @@ email: Damino.ben.aoun@gmail.com
 description: >- # this means to ignore newlines until "baseurl:"
   CyberSecurity made easy
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "AmineBenAoun0x1.github.io" # the base hostname & protocol for your site, e.g. http://example.com
+url: "http://AmineBenAoun0x1.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 linkedin_username: Mohamed amine ben aoun
 github_username:  AmineBenAoun0x1
 
