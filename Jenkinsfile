@@ -31,6 +31,7 @@ pipeline {
                     gitleaks detect --source . --report-path gitleaks-report.json --no-banner || true
                 '''
             }
+        }       
 
         stage('Start SonarQube') {
             steps {
