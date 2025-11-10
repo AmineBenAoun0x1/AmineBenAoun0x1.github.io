@@ -16,25 +16,25 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                sh "docker run --rm -e SONAR_HOST_URL=$SONAR_HOST_URL -e SONAR_LOGIN=$SONAR_LOGIN sonarsource/sonar-scanner-cli"
+                sh "docker run --rm -e SONAR_HOST_URL=${SONAR_HOST_URL} -e SONAR_LOGIN=${SONAR_LOGIN} sonarsource/sonar-scanner-cli"
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t $DOCKER_IMAGE ."
+                sh "docker build -t ${DOCKER_IMAGE} ."
             }
         }
 
         stage('Test Jekyll Build') {
             steps {
-                sh "docker run --rm -v $(pwd):/srv/jekyll $DOCKER_IMAGE jekyll build --dry-run"
+                sh "docker run --rm -v \$(pwd):/srv/jekyll ${DOCKER_IMAGE} jekyll build --dry-run"
             }
         }
 
         stage('Deploy') {
             steps {
-                sh "docker run --rm -d -p 4000:4000 $DOCKER_IMAGE"
+                sh "docker run --rm -d -p 4000:4000 ${DOCKER_IMAGE}"
             }
         }
     }
