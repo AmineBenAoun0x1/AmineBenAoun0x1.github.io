@@ -3,16 +3,15 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "my-jekyll-site"
-        SONAR_HOST_URL = "http://sonarqube:9000" // Use container name instead of localhost
-        SONAR_LOGIN = credentials('sonar-token') // Jenkins secret text
-        DOCKER_NETWORK = "jenkins-net" // Docker network name
+        DOCKER_NETWORK = "jenkins-net"
+        SONAR_HOST_URL = "http://sonarqube:9000"
     }
 
     stages {
         stage('Setup Docker Network') {
             steps {
                 sh """
-                # Create network if it doesn't exist
+                # Create Docker network if it doesn't exist
                 if ! docker network inspect ${DOCKER_NETWORK} > /dev/null 2>&1; then
                     docker network create ${DOCKER_NETWORK}
                 fi
@@ -23,24 +22,39 @@ pipeline {
         stage('Start SonarQube') {
             steps {
                 sh """
-                # Run SonarQube container if not already running
+                # Run SonarQube container if not running
                 if ! docker ps --format '{{.Names}}' | grep -q '^sonarqube\$'; then
                     docker run -d --name sonarqube --network ${DOCKER_NETWORK} -p 9000:9000 sonarqube:latest
-                    echo "Waiting 60 seconds for SonarQube to start..."
-                    sleep 60
                 fi
                 """
+
+                // Wait until SonarQube is reachable
+                waitUntil {
+                    script {
+                        try {
+                            sh "curl -sSf ${SONAR_HOST_URL}/api/system/status | grep -q 'UP'"
+                            return true
+                        } catch (Exception e) {
+                            sleep 5
+                            return false
+                        }
+                    }
+                }
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                sh """
-                docker run --rm --network ${DOCKER_NETWORK} \
-                  -e SONAR_HOST_URL=${SONAR_HOST_URL} \
-                  -e SONAR_LOGIN=${SONAR_LOGIN} \
-                  sonarsource/sonar-scanner-cli
-                """
+                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_LOGIN')]) {
+                    sh """
+                    docker run --rm --network ${DOCKER_NETWORK} \
+                      -v \$(pwd):/usr/src \
+                      -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                      -e SONAR_LOGIN=${SONAR_LOGIN} \
+                      -w /usr/src \
+                      sonarsource/sonar-scanner-cli
+                    """
+                }
             }
         }
 
