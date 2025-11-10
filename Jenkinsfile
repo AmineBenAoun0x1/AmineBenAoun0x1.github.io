@@ -38,7 +38,7 @@ pipeline {
                     sh """
                     docker run --rm --network ${DOCKER_NETWORK} \
                       -e SONAR_HOST_URL=${SONAR_HOST_URL} \
-                      -e SONAR_LOGIN=$SONAR_LOGIN \
+                      -e SONAR_TOKEN=sqa_5e7e7314d26962daaed208abc57da2a82cce8266 \
                       sonarsource/sonar-scanner-cli:5.0
                     """
                 }
