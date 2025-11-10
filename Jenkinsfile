@@ -18,11 +18,14 @@ pipeline {
                 '''
             }
         }
-          stage('Gitleaks Scan') {
+
+        stage('Gitleaks Scan') {
             steps {
-                gitleaks detect --source . --report-path gitleaks-report.json --no-banner || true
+                sh '''
+                gitleaks detect --source . --report-path gitleaks-report.json --no-banner
+                '''
             }
-        }       
+        }
 
         stage('Start SonarQube') {
             steps {
@@ -31,63 +34,42 @@ pipeline {
                 docker run -d --name sonarqube -p 9000:9000 \
                     -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
                     sonarqube:lts-community
-                
+
                 # Wait for SonarQube to be ready
                 echo "Waiting for SonarQube to start (this may take 2-3 minutes)..."
                 sleep 120
-                
-                # Additional wait with connection check
                 timeout 180 bash -c 'until curl -f -s http://localhost:9000/api/system/status > /dev/null; do echo "Waiting for SonarQube..."; sleep 10; done'
                 echo "✅ SonarQube is ready!"
                 '''
             }
         }
 
-        stage('Create SonarQube Token') {
-            steps {
-                script {
-                    try {
-                        // Try to create a token via API (admin/admin default credentials)
-                        sh '''
-                        curl -u admin:admin -X POST "http://localhost:9000/api/user_tokens/generate" \
-                          -H "Content-Type: application/x-www-form-urlencoded" \
-                          -d "name=jenkins-token" \
-                          -d "login=admin" || echo "Token creation failed, may already exist"
-                        '''
-                    } catch (Exception e) {
-                        echo "Token creation step skipped: ${e.getMessage()}"
-                    }
-                }
-            }
-        }
-
         stage('SonarQube Analysis') {
             steps {
-                sh """
+                sh '''
                 # Create sonar-project.properties file
                 cat > sonar-project.properties << EOF
-                sonar.projectKey=my-jekyll-site
-                sonar.projectName=My Jekyll Site
-                sonar.projectVersion=1.0
-                sonar.sources=.
-                sonar.host.url=http://localhost:9000
-                sonar.login=admin
-                sonar.password=admin
-                sonar.sourceEncoding=UTF-8
-                sonar.exclusions=**/vendor/**,**/node_modules/**,**/._*
-                EOF
-                
+sonar.projectKey=my-jekyll-site
+sonar.projectName=My Jekyll Site
+sonar.projectVersion=1.0
+sonar.sources=.
+sonar.host.url=http://localhost:9000
+sonar.login=admin
+sonar.sourceEncoding=UTF-8
+sonar.exclusions=**/vendor/**,**/node_modules/**,**/._*
+EOF
+
                 echo "📋 SonarQube configuration:"
-                cat sonar-project.properties | grep -v password
-                
-                # Run SonarScanner with direct host access
+                cat sonar-project.properties | grep -v login
+
+                # Run SonarScanner
                 docker run --rm \
                   -v "\$(pwd):/usr/src" \
                   -w /usr/src \
                   --add-host=host.docker.internal:host-gateway \
                   sonarsource/sonar-scanner-cli:latest \
                   -Dproject.settings=sonar-project.properties
-                """
+                '''
             }
         }
 
@@ -105,7 +87,7 @@ pipeline {
 
         stage('Security Scan - Trivy') {
             steps {
-                sh """
+                sh '''
                 # Scan the Docker image for vulnerabilities
                 docker run --rm \
                   -v /var/run/docker.sock:/var/run/docker.sock \
@@ -113,17 +95,16 @@ pipeline {
                   image --severity HIGH,CRITICAL \
                   --exit-code 0 \
                   ${DOCKER_IMAGE}
-                """
+                '''
             }
         }
 
         stage('Deploy to Staging') {
             steps {
-                sh """
-                # Deploy the application
+                sh '''
                 docker run -d --name jekyll-site -p 4000:4000 ${DOCKER_IMAGE}
                 echo "🚀 Application deployed to http://localhost:4000"
-                """
+                '''
             }
         }
     }
