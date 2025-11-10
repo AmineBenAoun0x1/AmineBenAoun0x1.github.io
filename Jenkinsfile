@@ -29,19 +29,10 @@ pipeline {
 }
 
 
-        stage('Start SonarQube') {
+        stage('Gitleaks Scan') {
             steps {
                 sh '''
-                # Start SonarQube container
-                docker run -d --name sonarqube -p 9000:9000 \
-                    -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
-                    sonarqube:lts-community
-
-                # Wait for SonarQube to be ready
-                echo "Waiting for SonarQube to start (this may take 2-3 minutes)..."
-                sleep 120
-                timeout 180 bash -c 'until curl -f -s http://localhost:9000/api/system/status > /dev/null; do echo "Waiting for SonarQube..."; sleep 10; done'
-                echo "✅ SonarQube is ready!"
+                gitleaks detect --source . --report-path gitleaks-report.json --no-banner
                 '''
             }
         }
