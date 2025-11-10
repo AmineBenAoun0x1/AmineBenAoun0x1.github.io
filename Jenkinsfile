@@ -37,10 +37,10 @@ pipeline {
                 withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_LOGIN')]) {
                     sh """
                     docker run --rm --network ${DOCKER_NETWORK} \
-                       DSONAR_HOST_URL=${SONAR_HOST_URL} \
-                       DSONAR_PROJECT_KEY=my-jekyll-site \
-                       DSONAR_SOURCES=. \
-                       DSONAR_TOKEN=squ_eac939f1521ef0dca88ebe75bf1d6f046407a015 \
+                        -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                        -e sonar.projectKey=my-jekyll-site \
+                        -e SONAR_SOURCES=. \
+                        -e SONAR_TOKEN=squ_eac939f1521ef0dca88ebe75bf1d6f046407a015 \
                       sonarsource/sonar-scanner-cli:5.0
                     """
                 }
