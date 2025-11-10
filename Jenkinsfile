@@ -39,7 +39,7 @@ pipeline {
                     docker run --rm --network ${DOCKER_NETWORK} \
                       -e SONAR_HOST_URL=${SONAR_HOST_URL} \
                       -e SONAR_LOGIN=$SONAR_LOGIN \
-                      sonarsource/sonar-scanner-cli:latest
+                      sonarsource/sonar-scanner-cli:5.0
                     """
                 }
             }
