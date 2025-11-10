@@ -38,6 +38,7 @@ pipeline {
                     sh """
                     docker run --rm --network ${DOCKER_NETWORK} \
                       -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                      -e SONAR_PROJECT_KEY=my-jekyll-site
                       -e SONAR_TOKEN=squ_eac939f1521ef0dca88ebe75bf1d6f046407a015 \
                       sonarsource/sonar-scanner-cli:5.0
                     """
