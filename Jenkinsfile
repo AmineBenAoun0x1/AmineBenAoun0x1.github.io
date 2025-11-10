@@ -21,26 +21,28 @@ pipeline {
 
         stage('Gitleaks Scan') {
             steps {
-                echo "🔍 Running Gitleaks scan..."
-            sh '''
-            REPORT="gitleaks-report.json"
-            gitleaks detect --source . --report-path $REPORT --no-banner
+                script {
+                    echo "Running Gitleaks scan..."
+                    sh '''
+                    REPORT="gitleaks-report.json"
+                    gitleaks detect --source . --report-path $REPORT --no-banner
 
-            if [ ! -f "$REPORT" ]; then
-                echo "❌ No report generated."
-                exit 1
-            fi
+                    if [ ! -f "$REPORT" ]; then
+                        echo "No report generated."
+                        exit 1
+                    fi
 
-            LEAKS=$(jq '.leaks | length' $REPORT)
-            if [ "$LEAKS" -eq 0 ]; then
-                echo "✅ No leaks found."
-            else
-                echo "🚨 Found $LEAKS leaks! Details:"
-                jq -r '.leaks[] | "File: \(.file), Line: \(.line), Rule: \(.rule), Secret: \(.secret)"' $REPORT
-                # Optional: fail the build if leaks are found
-                # exit 1
-            fi
-            '''
+                    LEAKS=$(jq '.leaks | length' $REPORT)
+                    if [ "$LEAKS" -eq 0 ]; then
+                        echo "No leaks found."
+                    else
+                        echo "Found $LEAKS leaks. Details:"
+                        jq -r '.leaks[] | "File: \(.file), Line: \(.line), Rule: \(.rule), Secret: \(.secret)"' $REPORT
+                        # Uncomment to fail build if leaks are found
+                        # exit 1
+                    fi
+                    '''
+                }
             }
         }
 
@@ -53,10 +55,10 @@ pipeline {
                     sonarqube:lts-community
 
                 # Wait for SonarQube to be ready
-                echo "Waiting for SonarQube to start (this may take 2-3 minutes)..."
+                echo "Waiting for SonarQube to start..."
                 sleep 120
-                timeout 180 bash -c 'until curl -f -s http://localhost:9000/api/system/status > /dev/null; do echo "Waiting for SonarQube..."; sleep 10; done'
-                echo "✅ SonarQube is ready!"
+                timeout 180 bash -c 'until curl -f -s http://localhost:9000/api/system/status > /dev/null; do echo "Waiting..."; sleep 10; done'
+                echo "SonarQube is ready"
                 '''
             }
         }
@@ -76,7 +78,7 @@ sonar.sourceEncoding=UTF-8
 sonar.exclusions=**/vendor/**,**/node_modules/**,**/._*
 EOF
 
-                echo "📋 SonarQube configuration:"
+                echo "SonarQube configuration:"
                 cat sonar-project.properties | grep -v login
 
                 # Run SonarScanner
@@ -120,7 +122,7 @@ EOF
             steps {
                 sh '''
                 docker run -d --name jekyll-site -p 4000:4000 ${DOCKER_IMAGE}
-                echo "🚀 Application deployed to http://localhost:4000"
+                echo "Application deployed to http://localhost:4000"
                 '''
             }
         }
@@ -129,7 +131,7 @@ EOF
     post {
         always {
             sh '''
-            echo "🧹 Cleaning up containers..."
+            echo "Cleaning up containers..."
             docker stop sonarqube || true
             docker stop jekyll-site || true
             docker rm sonarqube || true  
@@ -137,11 +139,11 @@ EOF
             '''
         }
         success {
-            echo "✅ Pipeline completed successfully!"
+            echo "Pipeline completed successfully!"
             sh 'echo "Access your application at: http://localhost:4000"'
         }
         failure {
-            echo "❌ Pipeline failed. Check the logs above for details."
+            echo "Pipeline failed. Check the logs above for details."
         }
     }
 }
