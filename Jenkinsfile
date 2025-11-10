@@ -18,6 +18,24 @@ pipeline {
                 '''
             }
         }
+        stage('Full Security Scan - Trivy') {
+    steps {
+        sh '''
+        echo "Running full Trivy scan..."
+
+        # 1. Filesystem scan (all files, all severities)
+        trivy fs --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL --exit-code 0 --format json --output trivy-fs-report.json .
+
+        # 2. Docker image scan (all layers, all severities)
+        docker build -t ${DOCKER_IMAGE} .
+        trivy image --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL --exit-code 0 --format json --output trivy-image-report.json ${DOCKER_IMAGE}
+
+        # 3. Optional: dependency scan for languages (auto-detect)
+        trivy fs --scanners vuln,secret,config --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL --exit-code 0 --format json --output trivy-full-report.json .
+        '''
+    }
+}
+
     stage('Gitleaks Scan') {
         steps {
             echo "Running Gitleaks scan..."
