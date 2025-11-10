@@ -22,7 +22,7 @@ pipeline {
         steps {
             echo "Running Gitleaks scan..."
                 sh '''
-                gitleaks detect --source . --report-path $REPORT --no-banner || true
+                gitleaks detect --source . --report-path $REPORT --no-banner
         fi
         '''
     }
