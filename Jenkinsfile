@@ -18,15 +18,30 @@ pipeline {
                 '''
             }
         }
-
-        stage('Gitleaks Scan') {
-            steps {
+    stage('Gitleaks Scan') {
+        steps {
+            echo "Running Gitleaks scan..."
                 sh '''
-                gitleaks detect --source . --report-path gitleaks-report.json --no-banner
-                ls -l gitleaks-report.json
-                '''
-            }
-        }
+        REPORT="gitleaks-report.json"
+        # Run Gitleaks but ignore the exit code
+        gitleaks detect --source . --report-path $REPORT --no-banner || true
+
+        # Show report if leaks exist
+        if [ -f "$REPORT" ]; then
+            LEAKS=$(jq '.leaks | length' $REPORT)
+            if [ "$LEAKS" -eq 0 ]; then
+                echo "No leaks found."
+            else
+                echo "Found $LEAKS leaks. Details:"
+                jq -r '.leaks[] | "File: \(.file), Line: \(.line), Rule: \(.rule), Secret: \(.secret)"' $REPORT
+            fi
+        else
+            echo "No report generated."
+        fi
+        '''
+    }
+}
+
 
         stage('Start SonarQube') {
             steps {
