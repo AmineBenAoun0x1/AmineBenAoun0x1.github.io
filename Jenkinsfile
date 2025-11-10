@@ -26,21 +26,6 @@ pipeline {
                     sh '''
                     REPORT="gitleaks-report.json"
                     gitleaks detect --source . --report-path $REPORT --no-banner
-
-                    if [ ! -f "$REPORT" ]; then
-                        echo "No report generated."
-                        exit 1
-                    fi
-
-                    LEAKS=$(jq '.leaks | length' $REPORT)
-                    if [ "$LEAKS" -eq 0 ]; then
-                        echo "No leaks found."
-                    else
-                        echo "Found $LEAKS leaks. Details:"
-                        jq -r '.leaks[] | "File: \(.file), Line: \(.line), Rule: \(.rule), Secret: \(.secret)"' $REPORT
-                        # Uncomment the next line to fail the build if leaks are found
-                        # exit 1
-                    fi
                     '''
                 }
             }
