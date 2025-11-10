@@ -38,7 +38,7 @@ pipeline {
                     else
                         echo "Found $LEAKS leaks. Details:"
                         jq -r '.leaks[] | "File: \(.file), Line: \(.line), Rule: \(.rule), Secret: \(.secret)"' $REPORT
-                        # Uncomment to fail build if leaks are found
+                        # Uncomment the next line to fail the build if leaks are found
                         # exit 1
                     fi
                     '''
@@ -57,7 +57,7 @@ pipeline {
                 # Wait for SonarQube to be ready
                 echo "Waiting for SonarQube to start..."
                 sleep 120
-                timeout 180 bash -c 'until curl -f -s http://localhost:9000/api/system/status > /dev/null; do echo "Waiting..."; sleep 10; done'
+                timeout 180 bash -c 'until curl -f -s http://localhost:9000/api/system/status > /dev/null; do echo "Waiting for SonarQube..."; sleep 10; done'
                 echo "SonarQube is ready"
                 '''
             }
@@ -143,7 +143,7 @@ EOF
             sh 'echo "Access your application at: http://localhost:4000"'
         }
         failure {
-            echo "Pipeline failed. Check the logs above for details."
+            echo "Pipeline failed. Check logs above for details."
         }
     }
 }
