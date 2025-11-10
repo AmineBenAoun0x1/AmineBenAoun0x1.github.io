@@ -20,16 +20,7 @@ pipeline {
         }
           stage('Gitleaks Scan') {
             steps {
-                echo 'Running Gitleaks to detect secrets...'
-                sh '''
-                    if ! command -v gitleaks &> /dev/null; then
-                        echo "Installing Gitleaks..."
-                        wget -q https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks_$(uname -s)_$(uname -m).tar.gz -O gitleaks.tar.gz
-                        tar -xzf gitleaks.tar.gz
-                        mv gitleaks /usr/local/bin/
-                    fi
-                    gitleaks detect --source . --report-path gitleaks-report.json --no-banner || true
-                '''
+                gitleaks detect --source . --report-path gitleaks-report.json --no-banner || true
             }
         }       
 
