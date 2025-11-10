@@ -21,13 +21,9 @@ pipeline {
 
         stage('Gitleaks Scan') {
             steps {
-                script {
-                    echo "Running Gitleaks scan..."
-                    sh '''
-                    REPORT="gitleaks-report.json"
-                    gitleaks detect --source . --report-path $REPORT --no-banner
-                    '''
-                }
+                sh '''
+                gitleaks detect --source . --report-path gitleaks-report.json --no-banner
+                '''
             }
         }
 
@@ -40,10 +36,10 @@ pipeline {
                     sonarqube:lts-community
 
                 # Wait for SonarQube to be ready
-                echo "Waiting for SonarQube to start..."
+                echo "Waiting for SonarQube to start (this may take 2-3 minutes)..."
                 sleep 120
                 timeout 180 bash -c 'until curl -f -s http://localhost:9000/api/system/status > /dev/null; do echo "Waiting for SonarQube..."; sleep 10; done'
-                echo "SonarQube is ready"
+                echo "✅ SonarQube is ready!"
                 '''
             }
         }
@@ -63,7 +59,7 @@ sonar.sourceEncoding=UTF-8
 sonar.exclusions=**/vendor/**,**/node_modules/**,**/._*
 EOF
 
-                echo "SonarQube configuration:"
+                echo "📋 SonarQube configuration:"
                 cat sonar-project.properties | grep -v login
 
                 # Run SonarScanner
@@ -107,7 +103,7 @@ EOF
             steps {
                 sh '''
                 docker run -d --name jekyll-site -p 4000:4000 ${DOCKER_IMAGE}
-                echo "Application deployed to http://localhost:4000"
+                echo "🚀 Application deployed to http://localhost:4000"
                 '''
             }
         }
@@ -116,7 +112,7 @@ EOF
     post {
         always {
             sh '''
-            echo "Cleaning up containers..."
+            echo "🧹 Cleaning up containers..."
             docker stop sonarqube || true
             docker stop jekyll-site || true
             docker rm sonarqube || true  
@@ -124,11 +120,11 @@ EOF
             '''
         }
         success {
-            echo "Pipeline completed successfully!"
+            echo "✅ Pipeline completed successfully!"
             sh 'echo "Access your application at: http://localhost:4000"'
         }
         failure {
-            echo "Pipeline failed. Check logs above for details."
+            echo "❌ Pipeline failed. Check the logs above for details."
         }
     }
 }
