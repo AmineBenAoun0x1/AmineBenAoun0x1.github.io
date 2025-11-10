@@ -10,8 +10,13 @@ pipeline {
     stages {
         stage('SonarQube Analysis') {
             steps {
-                // Run SonarQube scanner in Docker
-                sh "docker run --rm -e SONAR_HOST_URL=${SONAR_HOST_URL} -e SONAR_LOGIN=${SONAR_LOGIN} sonarsource/sonar-scanner-cli"
+                // Use host networking so Docker container can access localhost SonarQube
+                sh '''
+                docker run --rm --network host \
+                  -e SONAR_HOST_URL=${SONAR_HOST_URL} \
+                  -e SONAR_LOGIN=${SONAR_LOGIN} \
+                  sonarsource/sonar-scanner-cli
+                '''
             }
         }
 
