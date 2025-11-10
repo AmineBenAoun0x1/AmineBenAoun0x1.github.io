@@ -23,6 +23,7 @@ pipeline {
             steps {
                 sh '''
                 gitleaks detect --source . --report-path gitleaks-report.json --no-banner
+                ls -l gitleaks-report.json
                 '''
             }
         }
