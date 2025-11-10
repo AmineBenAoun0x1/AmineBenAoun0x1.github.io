@@ -21,9 +21,26 @@ pipeline {
 
         stage('Gitleaks Scan') {
             steps {
-                sh '''
-                gitleaks detect --source . --report-path gitleaks-report.json --no-banner
-                '''
+                echo "🔍 Running Gitleaks scan..."
+            sh '''
+            REPORT="gitleaks-report.json"
+            gitleaks detect --source . --report-path $REPORT --no-banner
+
+            if [ ! -f "$REPORT" ]; then
+                echo "❌ No report generated."
+                exit 1
+            fi
+
+            LEAKS=$(jq '.leaks | length' $REPORT)
+            if [ "$LEAKS" -eq 0 ]; then
+                echo "✅ No leaks found."
+            else
+                echo "🚨 Found $LEAKS leaks! Details:"
+                jq -r '.leaks[] | "File: \(.file), Line: \(.line), Rule: \(.rule), Secret: \(.secret)"' $REPORT
+                # Optional: fail the build if leaks are found
+                # exit 1
+            fi
+            '''
             }
         }
 
